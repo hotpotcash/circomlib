@@ -1,52 +1,55 @@
+const chai = require("chai");
 const path = require("path");
+const snarkjs = require("snarkjs");
+const compiler = require("circom");
 
-const Fr = require("ffjavascript").bn128.Fr;
-const Scalar = require("ffjavascript").Scalar;
-const tester = require("circom").tester;
+const assert = chai.assert;
+
+const bigInt = snarkjs.bigInt;
 
 function print(circuit, w, s) {
     console.log(s + ": " + w[circuit.getSignalIdx(s)]);
 }
 
-async function checkSub(_a,_b, circuit) {
-    let a=Scalar.e(_a);
-    let b=Scalar.e(_b);
-    if (Scalar.lt(a, 0)) a = Scalar.add(a, Scalar.shl(1, 16));
-    if (Scalar.lt(b, 0)) b = Scalar.add(b, Scalar.shl(1, 16));
-    const w = await circuit.calculateWitness({a: a, b: b}, true);
+function checkSub(_a,_b, circuit) {
+    let a=bigInt(_a);
+    let b=bigInt(_b);
+    if (a.lesser(bigInt.zero)) a = a.add(bigInt.one.shl(16));
+    if (b.lesser(bigInt.zero)) b = b.add(bigInt.one.shl(16));
+    const w = circuit.calculateWitness({a: a, b: b});
 
-    let res = Scalar.sub(a, b);
-    if (Scalar.lt(res, 0)) res = Scalar.add(res, Scalar.shl(1, 16));
-
-    await circuit.assertOut(w, {out: res});
+    let res = a.sub(b);
+    if (res.lesser(bigInt.zero)) res = res.add(bigInt.one.shl(16));
+    assert( w[circuit.getSignalIdx("main.out")].equals(bigInt(res)) );
 }
 
-describe("BinSub test", function () {
-
-    this.timeout(100000);
-
+describe("BinSub test", () => {
     let circuit;
     before( async() => {
-        circuit = await tester(path.join(__dirname, "circuits", "binsub_test.circom"));
+        const cirDef = await compiler(path.join(__dirname, "circuits", "binsub_test.circom"));
+
+        circuit = new snarkjs.Circuit(cirDef);
+
+        console.log("NConstrains BinSub: " + circuit.nConstraints);
     });
 
     it("Should check variuos ege cases", async () => {
-        await checkSub(0,0, circuit);
-        await checkSub(1,0, circuit);
-        await checkSub(-1,0, circuit);
-        await checkSub(2,1, circuit);
-        await checkSub(2,2, circuit);
-        await checkSub(2,3, circuit);
-        await checkSub(2,-1, circuit);
-        await checkSub(2,-2, circuit);
-        await checkSub(2,-3, circuit);
-        await checkSub(-2,-3, circuit);
-        await checkSub(-2,-2, circuit);
-        await checkSub(-2,-1, circuit);
-        await checkSub(-2,0, circuit);
-        await checkSub(-2,1, circuit);
-        await checkSub(-2,2, circuit);
-        await checkSub(-2,3, circuit);
+        checkSub(0,0, circuit);
+        checkSub(1,0, circuit);
+        checkSub(-1,0, circuit);
+        checkSub(2,1, circuit);
+        checkSub(2,2, circuit);
+        checkSub(2,3, circuit);
+        checkSub(2,-1, circuit);
+        checkSub(2,-2, circuit);
+        checkSub(2,-3, circuit);
+        checkSub(-2,-3, circuit);
+        checkSub(-2,-2, circuit);
+        checkSub(-2,-1, circuit);
+        checkSub(-2,0, circuit);
+        checkSub(-2,1, circuit);
+        checkSub(-2,2, circuit);
+        checkSub(-2,3, circuit);
     });
 
 

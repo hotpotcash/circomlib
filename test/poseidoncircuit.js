@@ -1,57 +1,60 @@
 const chai = require("chai");
 const path = require("path");
-const tester = require("circom").tester;
+const snarkjs = require("snarkjs");
+const compiler = require("circom");
+var blake2b = require('blake2b');
 
 const poseidon = require("../src/poseidon.js");
 
 const assert = chai.assert;
 
+describe("Blake2b version test", function() {
+    it("Should give the expected output for blake2b version", async () => {
+        var output = new Uint8Array(32);
+        var input = Buffer.from('poseidon_constants');
+        h = blake2b(output.length).update(input).digest('hex')
+        assert.equal('e57ba154fb2c47811dc1a2369b27e25a44915b4e4ece4eb8ec74850cb78e01b1', h);
+    });
+});
+
 describe("Poseidon Circuit test", function () {
-    let circuit6;
-    let circuit3;
+    let circuit;
 
     this.timeout(100000);
 
     before( async () => {
-        circuit6 = await tester(path.join(__dirname, "circuits", "poseidon6_test.circom"));
-        circuit3 = await tester(path.join(__dirname, "circuits", "poseidon3_test.circom"));
+        const cirDef = await compiler(path.join(__dirname, "circuits", "poseidon_test.circom"));
+
+        circuit = new snarkjs.Circuit(cirDef);
+
+        console.log("Poseidon constraints: " + circuit.nConstraints);
     });
 
-    it("Should check constrain of hash([1, 2]) t=6", async () => {
-        const w = await circuit6.calculateWitness({inputs: [1, 2, 0,0,0]}, true);
+    it("Should check constrain of hash([1, 2])", async () => {
+        const w = circuit.calculateWitness({inputs: [1, 2]});
 
-        const res2 = poseidon([1,2,0,0,0]);
-        assert.equal("3975478831357328722254985704342968745327876719981393787143845259590563829094", res2.toString());
-        await circuit6.assertOut(w, {out : res2});
-        await circuit6.checkConstraints(w);
+        const res = w[circuit.getSignalIdx("main.out")];
+
+        const hash = poseidon.createHash(6, 8, 57);
+
+        const res2 = hash([1,2]);
+        assert.equal('12242166908188651009877250812424843524687801523336557272219921456462821518061', res2.toString());
+        assert.equal(res.toString(), res2.toString());
+        assert(circuit.checkWitness(w));
     });
 
-    it("Should check constrain of hash([3, 4]) t=6", async () => {
-        const w = await circuit6.calculateWitness({inputs: [3, 4,5,10,23]});
+    it("Should check constrain of hash([3, 4])", async () => {
+        const w = circuit.calculateWitness({inputs: [3, 4]});
 
-        const res2 = poseidon([3, 4,5,10,23]);
+        const res = w[circuit.getSignalIdx("main.out")];
 
-        assert.equal("18540626624821144952552691894137986276337186174352554475896834101336254024067", res2.toString());
-        await circuit6.assertOut(w, {out : res2});
-        await circuit6.checkConstraints(w);
-    });
+        const hash = poseidon.createHash(6, 8, 57);
 
+        const res2 = hash([3, 4]);
+        assert.equal('17185195740979599334254027721507328033796809509313949281114643312710535000993', res2.toString());
 
-    it("Should check constrain of hash([1, 2]) t=3", async () => {
-        const w = await circuit3.calculateWitness({inputs: [1, 2]});
+        assert.equal(res.toString(), res2.toString());
 
-        const res2 = poseidon([1,2]);
-        assert.equal("17117985411748610629288516079940078114952304104811071254131751175361957805920", res2.toString());
-        await circuit3.assertOut(w, {out : res2});
-        await circuit3.checkConstraints(w);
-    });
-
-    it("Should check constrain of hash([3, 4]) t=3", async () => {
-        const w = await circuit3.calculateWitness({inputs: [3, 4]});
-
-        const res2 = poseidon([3, 4]);
-        assert.equal("21867347236198497199818917118739170715216974132230970409806500217655788551452", res2.toString());
-        await circuit3.assertOut(w, {out : res2});
-        await circuit3.checkConstraints(w);
+        assert(circuit.checkWitness(w));
     });
 });

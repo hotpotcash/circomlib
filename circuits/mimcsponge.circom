@@ -1,17 +1,17 @@
 // implements MiMC-2n/n as hash using a sponge construction.
 // log_5(21888242871839275222246405745257275088548364400416034343698204186575808495617) ~= 110
 // => nRounds should be 220
-template MiMCSponge(nInputs, nRounds, nOutputs) {
+template MiMCSponge(nInputs, nOutputs) {
   signal input ins[nInputs];
   signal input k;
   signal output outs[nOutputs];
 
-  var i;
+  var nRounds = 220;
 
   // S = R||C
   component S[nInputs + nOutputs - 1];
 
-  for (i = 0; i < nInputs; i++) {
+  for (var i = 0; i < nInputs; i++) {
     S[i] = MiMCFeistel(nRounds);
     S[i].k <== k;
     if (i == 0) {
@@ -25,7 +25,7 @@ template MiMCSponge(nInputs, nRounds, nOutputs) {
 
   outs[0] <== S[nInputs - 1].xL_out;
 
-  for (i = 0; i < nOutputs - 1; i++) {
+  for (var i = 0; i < nOutputs - 1; i++) {
     S[nInputs + i] = MiMCFeistel(nRounds);
     S[nInputs + i].k <== k;
     S[nInputs + i].xL_in <== S[nInputs + i - 1].xL_out;
@@ -42,7 +42,7 @@ template MiMCFeistel(nrounds) {
     signal output xR_out;
 
     // doesn't contain the first and last round constants, which are always zero
-    var c_partial[218] = [
+    var c_partial = [
       7120861356467848435263064379192047478074060781135320967663101236819528304084,
       5024705281721889198577876690145313457398658950011302225525409148828000436681,
       17980351014018068290387269214713820287804403312720763401943303895585469787384,

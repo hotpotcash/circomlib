@@ -1,11 +1,12 @@
 const chai = require("chai");
+const snarkjs = require("snarkjs");
 
 const eddsa = require("../src/eddsa.js");
 const babyJub = require("../src/babyjub.js");
 
 const assert = chai.assert;
 
-const utils = require("ffjavascript").utils;
+const bigInt = snarkjs.bigInt;
 
 describe("EdDSA js test", function () {
 
@@ -13,7 +14,7 @@ describe("EdDSA js test", function () {
 
     it("Sign (using Mimc7) a single 10 bytes from 0 to 9", () => {
         const msgBuf = Buffer.from("00010203040506070809", "hex");
-        const msg = utils.leBuff2int(msgBuf);
+        const msg = bigInt.leBuff2int(msgBuf);
 
         //  const prvKey = crypto.randomBytes(32);
 
@@ -48,7 +49,7 @@ describe("EdDSA js test", function () {
 
     it("Sign (using Poseidon) a single 10 bytes from 0 to 9", () => {
         const msgBuf = Buffer.from("00010203040506070809", "hex");
-        const msg = utils.leBuff2int(msgBuf);
+        const msg = bigInt.leBuff2int(msgBuf);
 
         const prvKey = Buffer.from("0001020304050607080900010203040506070809000102030405060708090001", "hex");
 
@@ -67,12 +68,12 @@ describe("EdDSA js test", function () {
         assert.equal(signature.R8[1].toString(),
             "15383486972088797283337779941324724402501462225528836549661220478783371668959");
         assert.equal(signature.S.toString(),
-            "1398758333392199195742243841591064350253744445503462896781493968760929513778");
+            "248298168863866362217836334079793350221620631973732197668910946177382043688");
 
         const pSignature = eddsa.packSignature(signature);
         assert.equal(pSignature.toString("hex"), ""+
             "dfedb4315d3f2eb4de2d3c510d7a987dcab67089c8ace06308827bf5bcbe02a2"+
-            "32f16b0f2f4c4e1169aa59685637e1429b6581a9531d058d65f4ab224eab1703");
+            "28506bce274aa1b3f7e7c2fd7e4fe09bff8f9aa37a42def7994e98f322888c00");
 
         const uSignature = eddsa.unpackSignature(pSignature);
         assert(eddsa.verifyPoseidon(msg, uSignature, pubKey));

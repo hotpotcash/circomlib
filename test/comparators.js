@@ -1,185 +1,193 @@
 const chai = require("chai");
 const path = require("path");
+const snarkjs = require("snarkjs");
+const crypto = require("crypto");
 
-const tester = require("circom").tester;
-
-const Fr = require("ffjavascript").bn128.Fr;
+const compiler = require("circom");
 
 const assert = chai.assert;
 
-describe("Comparators test", function ()  {
-
-    this.timeout(100000);
-
+describe("Sum test", () => {
     it("Should create a iszero circuit", async() => {
-        const circuit = await tester(path.join(__dirname, "circuits", "iszero.circom"));
+        const cirDef = await compiler(path.join(__dirname, "circuits", "iszero.circom"));
+
+        const circuit = new snarkjs.Circuit(cirDef);
 
         let witness;
-        witness = await circuit.calculateWitness({ "in": 111}, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in": 111});
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": 0 }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in": 0 });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
     });
     it("Should create a isequal circuit", async() => {
-        const circuit = await tester(path.join(__dirname, "circuits", "isequal.circom"));
+        const cirDef = await compiler(path.join(__dirname, "circuits", "isequal.circom"));
+
+        const circuit = new snarkjs.Circuit(cirDef);
 
         let witness;
-        witness = await circuit.calculateWitness({ "in": [111,222] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "111", "in[1]": "222" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-
-        witness = await circuit.calculateWitness({ "in": [444,444] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "444", "in[1]": "444" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
     });
     it("Should create a comparison lessthan", async() => {
-        const circuit = await tester(path.join(__dirname, "circuits", "lessthan.circom"));
+        const cirDef = await compiler(path.join(__dirname, "circuits", "lessthan.circom"));
+
+        const circuit = new snarkjs.Circuit(cirDef);
 
         let witness;
-        witness = await circuit.calculateWitness({ "in": [333,444] }), true;
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "333", "in[1]": "444" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in":[1,1] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "1", "in[1]": "1" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [661, 660] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "661", "in[1]": "660" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 1] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "1" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 444] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "444" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [1, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "1", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [555, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "555", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
     });
     it("Should create a comparison lesseqthan", async() => {
+        const cirDef = await compiler(path.join(__dirname, "circuits", "lesseqthan.circom"));
 
-        const circuit = await tester(path.join(__dirname, "circuits", "lesseqthan.circom"));
+        const circuit = new snarkjs.Circuit(cirDef);
 
         let witness;
-        witness = await circuit.calculateWitness({ "in": [333,444] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "333", "in[1]": "444" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in":[1,1] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "1", "in[1]": "1" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [661, 660] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "661", "in[1]": "660" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 1] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "1" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 444] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "444" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [1, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "1", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [555, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "555", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
     });
     it("Should create a comparison greaterthan", async() => {
+        const cirDef = await compiler(path.join(__dirname, "circuits", "greaterthan.circom"));
 
-        const circuit = await tester(path.join(__dirname, "circuits", "greaterthan.circom"));
+        const circuit = new snarkjs.Circuit(cirDef);
 
         let witness;
-        witness = await circuit.calculateWitness({ "in": [333,444] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "333", "in[1]": "444" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in":[1,1] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "1", "in[1]": "1" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [661, 660] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "661", "in[1]": "660" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 1] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "1" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 444] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "444" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [1, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "1", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [555, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "555", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
     });
     it("Should create a comparison greatereqthan", async() => {
-        const circuit = await tester(path.join(__dirname, "circuits", "greatereqthan.circom"));
+        const cirDef = await compiler(path.join(__dirname, "circuits", "greatereqthan.circom"));
+
+        const circuit = new snarkjs.Circuit(cirDef);
+
+        console.log("NConstraints BalancesUpdater: " + circuit.nConstraints);
 
         let witness;
-        witness = await circuit.calculateWitness({ "in": [333,444] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "333", "in[1]": "444" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in":[1,1] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "1", "in[1]": "1" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [661, 660] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "661", "in[1]": "660" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 1] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "1" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 444] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(0)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "444" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(0)));
 
-        witness = await circuit.calculateWitness({ "in": [1, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "1", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [555, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "555", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
 
-        witness = await circuit.calculateWitness({ "in": [0, 0] }, true);
-        assert(Fr.eq(witness[0], Fr.e(1)));
-        assert(Fr.eq(witness[1], Fr.e(1)));
+        witness = circuit.calculateWitness({ "in[0]": "0", "in[1]": "0" });
+        assert(witness[0].equals(snarkjs.bigInt(1)));
+        assert(witness[1].equals(snarkjs.bigInt(1)));
     });
 });

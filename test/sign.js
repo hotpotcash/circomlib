@@ -1,7 +1,11 @@
+const chai = require("chai");
 const path = require("path");
-const Fr = require("ffjavascript").bn128.Fr;
-const Scalar = require("ffjavascript").Scalar;
-const tester = require("circom").tester;
+const snarkjs = require("snarkjs");
+const compiler = require("circom");
+
+const assert = chai.assert;
+
+const bigInt = snarkjs.bigInt;
 
 function print(circuit, w, s) {
     console.log(s + ": " + w[circuit.getSignalIdx(s)]);
@@ -10,71 +14,75 @@ function print(circuit, w, s) {
 function getBits(v, n) {
     const res = [];
     for (let i=0; i<n; i++) {
-        if (Scalar.isOdd(Scalar.shr(v, i))) {
-            res.push(Fr.one);
+        if (v.shr(i).isOdd()) {
+            res.push(bigInt.one);
         } else {
-            res.push(Fr.zero);
+            res.push(bigInt.zero);
         }
     }
     return res;
 }
 
-const q = Scalar.fromString("21888242871839275222246405745257275088548364400416034343698204186575808495617");
+const q = bigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
 
-describe("Sign test", function() {
+describe("Sign test", () => {
     let circuit;
-    this.timeout(100000);
-
     before( async() => {
-        circuit = await tester(path.join(__dirname, "circuits", "sign_test.circom"));
+        const cirDef = await compiler(path.join(__dirname, "circuits", "sign_test.circom"));
+
+        circuit = new snarkjs.Circuit(cirDef);
+
+        console.log("NConstrains: " + circuit.nConstraints);
     });
 
     it("Sign of 0", async () => {
-        const inp = getBits(Scalar.e(0), 254);
-        const w = await circuit.calculateWitness({in: inp}, true);
+        const inp = getBits(bigInt.zero, 254);
+        const w = circuit.calculateWitness({in: inp});
 
-        await circuit.assertOut(w, {sign: 0});
+        assert( w[circuit.getSignalIdx("main.sign")].equals(bigInt(0)) );
     });
 
     it("Sign of 3", async () => {
-        const inp = getBits(Scalar.e(3), 254);
-        const w = await circuit.calculateWitness({in: inp}, true);
+        const inp = getBits(bigInt(3), 254);
+        const w = circuit.calculateWitness({in: inp});
 
-        await circuit.assertOut(w, {sign: 0});
+        assert( w[circuit.getSignalIdx("main.sign")].equals(bigInt(0)) );
     });
 
     it("Sign of q/2", async () => {
-        const inp = getBits(Scalar.shr(q, 1), 254);
-        const w = await circuit.calculateWitness({in: inp}, true);
+        const inp = getBits(q.shr(bigInt.one), 254);
+        const w = circuit.calculateWitness({in: inp});
 
-        await circuit.assertOut(w, {sign: 0});
+        assert( w[circuit.getSignalIdx("main.sign")].equals(bigInt(0)) );
     });
 
     it("Sign of q/2+1", async () => {
-        const inp = getBits(Scalar.add(Scalar.shr(q, 1), 1) , 254);
-        const w = await circuit.calculateWitness({in: inp}, true);
+        const inp = getBits(q.shr(bigInt.one).add(bigInt.one), 254);
+        const w = circuit.calculateWitness({in: inp});
 
-        await circuit.assertOut(w, {sign: 1});
+        assert( w[circuit.getSignalIdx("main.sign")].equals(bigInt(1)) );
     });
 
     it("Sign of q-1", async () => {
-        const inp = getBits(Scalar.sub(q, 1), 254);
-        const w = await circuit.calculateWitness({in: inp}, true);
+        const inp = getBits(q.sub(bigInt.one), 254);
+        const w = circuit.calculateWitness({in: inp});
 
-        await circuit.assertOut(w, {sign: 1});
+        assert( w[circuit.getSignalIdx("main.sign")].equals(bigInt(1)) );
     });
 
     it("Sign of q", async () => {
         const inp = getBits(q, 254);
-        const w = await circuit.calculateWitness({in: inp}, true);
+        const w = circuit.calculateWitness({in: inp});
 
-        await circuit.assertOut(w, {sign: 1});
+        assert( w[circuit.getSignalIdx("main.sign")].equals(bigInt(1)) );
     });
 
     it("Sign of all ones", async () => {
-        const inp = getBits(Scalar.sub(Scalar.shl(1,254),1), 254);
-        const w = await circuit.calculateWitness({in: inp}, true);
+        const inp = getBits(bigInt(1).shl(254).sub(bigInt(1)), 254);
+        const w = circuit.calculateWitness({in: inp});
 
-        await circuit.assertOut(w, {sign: 1});
+        assert( w[circuit.getSignalIdx("main.sign")].equals(bigInt(1)) );
     });
+
+
 });

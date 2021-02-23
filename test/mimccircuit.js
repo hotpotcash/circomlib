@@ -1,8 +1,11 @@
 const chai = require("chai");
 const path = require("path");
-const tester = require("circom").tester;
+const snarkjs = require("snarkjs");
+const compiler = require("circom");
 
 const mimcjs = require("../src/mimc7.js");
+
+const assert = chai.assert;
 
 describe("MiMC Circuit test", function () {
     let circuit;
@@ -10,16 +13,23 @@ describe("MiMC Circuit test", function () {
     this.timeout(100000);
 
     before( async () => {
-        circuit = await tester(path.join(__dirname, "circuits", "mimc_test.circom"));
+        const cirDef = await compiler(path.join(__dirname, "circuits", "mimc_test.circom"));
+
+        circuit = new snarkjs.Circuit(cirDef);
+
+        console.log("MiMC constraints: " + circuit.nConstraints);
     });
 
     it("Should check constrain", async () => {
-        const w = await circuit.calculateWitness({x_in: 1, k: 2}, true);
+        const w = circuit.calculateWitness({x_in: 1, k: 2});
+
+        const res = w[circuit.getSignalIdx("main.out")];
 
         const res2 = mimcjs.hash(1,2,91);
 
-        await circuit.assertOut(w, {out: res2});
+        assert.equal(res.toString(), res2.toString());
 
-        await circuit.checkConstraints(w);
+        assert(circuit.checkWitness(w));
+
     });
 });

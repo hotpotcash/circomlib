@@ -1,14 +1,96 @@
 {
-  "name": "circomlib",
-  "version": "0.4.1",
+  "_from": "git+https://github.com/tornadocash/circomlib.git#c372f14d324d57339c88451834bf2824e73bbdbc",
+  "_id": "circomlib@0.0.20",
+  "_inBundle": false,
+  "_integrity": "",
+  "_location": "/circomlib",
+  "_phantomChildren": {
+    "@babel/code-frame": "7.12.13",
+    "ajv": "6.12.6",
+    "big-integer": "1.6.48",
+    "bindings": "1.5.0",
+    "chai": "4.3.0",
+    "chalk": "2.4.2",
+    "cross-spawn": "6.0.5",
+    "debug": "4.3.1",
+    "doctrine": "3.0.0",
+    "escape-string-regexp": "1.0.5",
+    "eslint-scope": "4.0.3",
+    "eslint-utils": "1.4.3",
+    "eslint-visitor-keys": "1.3.0",
+    "espree": "5.0.1",
+    "esquery": "1.4.0",
+    "esutils": "2.0.3",
+    "file-entry-cache": "5.0.1",
+    "functional-red-black-tree": "1.0.1",
+    "glob": "7.1.6",
+    "globals": "11.12.0",
+    "ignore": "4.0.6",
+    "import-fresh": "3.3.0",
+    "imurmurhash": "0.1.4",
+    "inherits": "2.0.4",
+    "inquirer": "6.5.2",
+    "js-yaml": "3.14.1",
+    "json-stable-stringify-without-jsonify": "1.0.1",
+    "levn": "0.3.0",
+    "lodash": "4.17.21",
+    "minimatch": "3.0.4",
+    "minimist": "1.2.5",
+    "nan": "2.14.2",
+    "natural-compare": "1.4.0",
+    "optionator": "0.8.3",
+    "path-is-inside": "1.0.2",
+    "progress": "2.0.3",
+    "regexpp": "2.0.1",
+    "safe-buffer": "5.2.1",
+    "strip-ansi": "4.0.0",
+    "strip-json-comments": "2.0.1",
+    "table": "5.4.6",
+    "text-table": "0.2.0",
+    "yargs": "12.0.5"
+  },
+  "_requested": {
+    "type": "git",
+    "raw": "circomlib@git+https://github.com/tornadocash/circomlib.git#c372f14d324d57339c88451834bf2824e73bbdbc",
+    "name": "circomlib",
+    "escapedName": "circomlib",
+    "rawSpec": "git+https://github.com/tornadocash/circomlib.git#c372f14d324d57339c88451834bf2824e73bbdbc",
+    "saveSpec": "git+https://github.com/tornadocash/circomlib.git#c372f14d324d57339c88451834bf2824e73bbdbc",
+    "fetchSpec": "https://github.com/tornadocash/circomlib.git",
+    "gitCommittish": "c372f14d324d57339c88451834bf2824e73bbdbc"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "git+https://github.com/tornadocash/circomlib.git#c372f14d324d57339c88451834bf2824e73bbdbc",
+  "_spec": "circomlib@git+https://github.com/tornadocash/circomlib.git#c372f14d324d57339c88451834bf2824e73bbdbc",
+  "_where": "D:\\dev\\hotpot\\hotpot-core",
+  "author": {
+    "name": "0Kims"
+  },
+  "bugs": {
+    "url": "https://github.com/iden3/circomlib/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "blake-hash": "^1.1.0",
+    "blake2b": "^2.1.3",
+    "snarkjs": "git+https://github.com/peppersec/snarkjs.git#869181cfaf7526fe8972073d31655493a04326d5",
+    "typedarray-to-buffer": "^3.1.5",
+    "web3": "^1.0.0-beta.55"
+  },
+  "deprecated": false,
   "description": "Basic circuits library for Circom",
-  "main": "index.js",
+  "devDependencies": {
+    "circom": "0.0.35",
+    "eslint-plugin-mocha": "^5.2.0",
+    "ganache-cli": "^6.4.4",
+    "mocha": "^5.2.0"
+  },
   "directories": {
     "test": "test"
   },
-  "scripts": {
-    "test": "mocha --max-old-space-size=4000"
-  },
+  "homepage": "https://github.com/iden3/circomlib#readme",
   "keywords": [
     "pedersen",
     "hash",
@@ -17,22 +99,15 @@
     "circom",
     "zksnark"
   ],
+  "license": "GPL-3.0",
+  "main": "index.js",
+  "name": "circomlib",
   "repository": {
     "type": "git",
-    "url": "https://github.com/iden3/circomlib.git"
+    "url": "git+https://github.com/iden3/circomlib.git"
   },
-  "author": "0Kims",
-  "license": "GPL-3.0",
-  "dependencies": {
-    "blake-hash": "^1.1.0",
-    "blake2b": "^2.1.3",
-    "circom": "0.5.33",
-    "ffjavascript": "0.1.0"
+  "scripts": {
+    "test": "mocha --max-old-space-size=4000"
   },
-  "devDependencies": {
-    "eslint": "^6.8.0",
-    "ganache-cli": "^6.12.1",
-    "mocha": "^7.1.1",
-    "web3": "^1.3.0"
-  }
+  "version": "0.0.20"
 }

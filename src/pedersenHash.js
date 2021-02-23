@@ -1,7 +1,7 @@
+const bn128 = require("snarkjs").bn128;
+const bigInt = require("snarkjs").bigInt;
 const babyJub = require("./babyjub");
 const createBlakeHash = require("blake-hash");
-const blake2b = require("blake2b");
-const Scalar = require("ffjavascript").Scalar;
 
 const GENPOINT_PREFIX = "PedersenGenerator";
 const windowSize = 4;
@@ -10,23 +10,13 @@ const nWindowsPerSegment = 50;
 exports.hash = pedersenHash;
 exports.getBasePoint = getBasePoint;
 
-function baseHash(type, S) {
-    if (type == "blake") {
-        return createBlakeHash("blake256").update(S).digest();
-    } else if (type == "blake2b") {
-        return Buffer.from(blake2b(32).update(Buffer.from(S)).digest());
-    }
-}
-
-function pedersenHash(msg, options) {
-    options = options || {};
-    options.baseHash = options.baseHash || "blake";
+function pedersenHash(msg) {
     const bitsPerSegment = windowSize*nWindowsPerSegment;
     const bits = buffer2bits(msg);
 
     const nSegments = Math.floor((bits.length - 1)/(windowSize*nWindowsPerSegment)) +1;
 
-    let accP = [babyJub.F.zero,babyJub.F.one];
+    let accP = [bigInt.zero,bigInt.one];
 
     for (let s=0; s<nSegments; s++) {
         let nWindows;
@@ -35,32 +25,32 @@ function pedersenHash(msg, options) {
         } else {
             nWindows = nWindowsPerSegment;
         }
-        let escalar = Scalar.e(0);
-        let exp = Scalar.e(1);
+        let escalar = bigInt.zero;
+        let exp = bigInt.one;
         for (let w=0; w<nWindows; w++) {
             let o = s*bitsPerSegment + w*windowSize;
-            let acc = Scalar.e(1);
+            let acc = bigInt.one;
             for (let b=0; ((b<windowSize-1)&&(o<bits.length)) ; b++) {
                 if (bits[o]) {
-                    acc = Scalar.add(acc, Scalar.shl(Scalar.e(1), b) );
+                    acc = acc.add( bigInt.one.shl(b) );
                 }
                 o++;
             }
             if (o<bits.length) {
                 if (bits[o]) {
-                    acc = Scalar.neg(acc);
+                    acc = acc.neg();
                 }
                 o++;
             }
-            escalar = Scalar.add(escalar, Scalar.mul(acc, exp));
-            exp = Scalar.shl(exp, windowSize+1);
+            escalar = escalar.add(acc.mul(exp));
+            exp = exp.shl(windowSize+1);
         }
 
-        if (Scalar.lt(escalar, 0)) {
-            escalar = Scalar.add( escalar, babyJub.subOrder);
+        if (escalar.lesser(bigInt.zero)) {
+            escalar = babyJub.subOrder.add(escalar);
         }
 
-        accP = babyJub.addPoint(accP, babyJub.mulPointEscalar(getBasePoint(options.baseHash, s), escalar));
+        accP = babyJub.addPoint(accP, babyJub.mulPointEscalar(getBasePoint(s), escalar));
     }
 
     return babyJub.packPoint(accP);
@@ -68,13 +58,13 @@ function pedersenHash(msg, options) {
 
 let bases = [];
 
-function getBasePoint(baseHashType, pointIdx) {
+function getBasePoint(pointIdx) {
     if (pointIdx<bases.length) return bases[pointIdx];
     let p= null;
     let tryIdx = 0;
     while (p==null) {
         const S = GENPOINT_PREFIX + "_" + padLeftZeros(pointIdx, 32) + "_" + padLeftZeros(tryIdx, 32);
-        const h = baseHash(baseHashType, S);
+        const h = createBlakeHash("blake256").update(S).digest();
         h[31] = h[31] & 0xBF;  // Set 255th bit to 0 (256th is the signal and 254th is the last possible bit to 1)
         p = babyJub.unpackPoint(h);
         tryIdx++;

@@ -22,8 +22,6 @@ include "t1.circom";
 include "t2.circom";
 include "../binsum.circom";
 include "sigmaplus.circom";
-include "sha256compression_function.circom";
-
 
 template Sha256compression() {
     signal input hin[256];
@@ -39,11 +37,7 @@ template Sha256compression() {
     signal h[65][32];
     signal w[64][32];
 
-
-    var outCalc[256] = sha256compression(hin, inp);
-
     var i;
-    for (i=0; i<256; i++) out[i] <-- outCalc[i];
 
     component sigmaPlus[48];
     for (i=0; i<48; i++) sigmaPlus[i] = SigmaPlus();
@@ -80,9 +74,6 @@ template Sha256compression() {
                 sigmaPlus[t-16].in7[k] <== w[t-7][k];
                 sigmaPlus[t-16].in15[k] <== w[t-15][k];
                 sigmaPlus[t-16].in16[k] <== w[t-16][k];
-            }
-
-            for (k=0; k<32; k++) {
                 w[t][k] <== sigmaPlus[t-16].out[k];
             }
         }
@@ -153,13 +144,13 @@ template Sha256compression() {
     }
 
     for (k=0; k<32; k++) {
-        out[31-k]     === fsum[0].out[k];
-        out[32+31-k]  === fsum[1].out[k];
-        out[64+31-k]  === fsum[2].out[k];
-        out[96+31-k]  === fsum[3].out[k];
-        out[128+31-k] === fsum[4].out[k];
-        out[160+31-k] === fsum[5].out[k];
-        out[192+31-k] === fsum[6].out[k];
-        out[224+31-k] === fsum[7].out[k];
+        out[31-k]     <== fsum[0].out[k];
+        out[32+31-k]  <== fsum[1].out[k];
+        out[64+31-k]  <== fsum[2].out[k];
+        out[96+31-k]  <== fsum[3].out[k];
+        out[128+31-k] <== fsum[4].out[k];
+        out[160+31-k] <== fsum[5].out[k];
+        out[192+31-k] <== fsum[6].out[k];
+        out[224+31-k] <== fsum[7].out[k];
     }
 }

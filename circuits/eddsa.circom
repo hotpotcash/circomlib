@@ -17,7 +17,7 @@
     along with circom. If not, see <https://www.gnu.org/licenses/>.
 */
 
-include "compconstant.circom";
+include "aliascheck.circom";
 include "pointbits.circom";
 include "pedersen.circom";
 include "escalarmulany.circom";
@@ -40,12 +40,15 @@ template EdDSAVerifier(n) {
 
 // Ensure S<Subgroup Order
 
-    component  compConstant = CompConstant(2736030358979909402780800718157159386076813972158567259200215660948447373040);
+    component aliasCheck = AliasCheckBabyJub();
+    aliasCheck.enabled <== 1;
 
-    for (i=0; i<254; i++) {
-        S[i] ==> compConstant.in[i];
+    for (i=0; i<251; i++) {
+        S[i] ==> aliasCheck.in[i];
     }
-    compConstant.out === 0;
+    S[251] === 0;
+    S[252] === 0;
+    S[253] === 0;
     S[254] === 0;
     S[255] === 0;
 
@@ -122,7 +125,7 @@ template EdDSAVerifier(n) {
 
 // Calculate left side of equation left = S*B8
 
-    var BASE8[2] = [
+    var BASE8 = [
         5299619240641551281634865583518297030282874472190772894086521144482721001553,
         16950150798460657717958625567821834550301663161624707787222815936182638968203
     ];

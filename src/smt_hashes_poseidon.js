@@ -1,18 +1,12 @@
+const Poseidon = require("./poseidon");
+const bigInt = require("snarkjs").bigInt;
 
-const ZqField = require("ffjavascript").ZqField;
-const Scalar = require("ffjavascript").Scalar;
-
-const poseidon = require("./poseidon");
-
-const F = new ZqField(Scalar.fromString("21888242871839275222246405745257275088548364400416034343698204186575808495617"));
-
+const hash = Poseidon.createHash(6, 8, 57);
 
 exports.hash0 = function (left, right) {
-    return poseidon([left, right]);
+    return hash([left, right]);
 };
 
 exports.hash1 = function(key, value) {
-    return poseidon([key, value, F.one]);
+    return hash([key, value, bigInt.one]);
 };
-
-exports.F = F;

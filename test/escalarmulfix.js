@@ -1,10 +1,13 @@
 const chai = require("chai");
 const path = require("path");
-const tester = require("circom").tester;
+const snarkjs = require("snarkjs");
+const compiler = require("circom");
 const babyjub = require("../src/babyjub");
-const Fr = require("ffjavascript").bn128.Fr;
 
 const assert = chai.assert;
+
+const bigInt = snarkjs.bigInt;
+
 
 function print(circuit, w, s) {
     console.log(s + ": " + w[circuit.getSignalIdx(s)]);
@@ -16,74 +19,93 @@ describe("Escalarmul test", function () {
     this.timeout(100000);
 
     before( async() => {
-        circuit = await tester(path.join(__dirname, "circuits", "escalarmulfix_test.circom"));
+        const cirDef = await compiler(path.join(__dirname, "circuits", "escalarmulfix_test.circom"));
+        circuit = new snarkjs.Circuit(cirDef);
+        console.log("NConstrains Escalarmul fix: " + circuit.nConstraints);
     });
 
     it("Should generate Same escalar mul", async () => {
 
-        const w = await circuit.calculateWitness({"e": 0});
+        const w = circuit.calculateWitness({"e": 0});
 
-        await circuit.checkConstraints(w);
+        assert(circuit.checkWitness(w));
 
-        await circuit.assertOut(w, {out: [0,1]}, true);
+        const xout = w[circuit.getSignalIdx("main.out[0]")];
+        const yout = w[circuit.getSignalIdx("main.out[1]")];
 
+        assert(xout.equals(0));
+        assert(yout.equals(1));
     });
 
     it("Should generate Same escalar mul", async () => {
 
-        const w = await circuit.calculateWitness({"e": 1}, true);
+        const w = circuit.calculateWitness({"e": 1});
 
-        await circuit.checkConstraints(w);
+        assert(circuit.checkWitness(w));
 
-        await circuit.assertOut(w, {out: babyjub.Base8});
+        const xout = w[circuit.getSignalIdx("main.out[0]")];
+        const yout = w[circuit.getSignalIdx("main.out[1]")];
 
+        assert(xout.equals(babyjub.Base8[0]));
+        assert(yout.equals(babyjub.Base8[1]));
     });
 
     it("Should generate scalar mul of a specific constant", async () => {
 
-        const s = Fr.e("2351960337287830298912035165133676222414898052661454064215017316447594616519");
+        const s = bigInt("2351960337287830298912035165133676222414898052661454064215017316447594616519");
         const base8 = [
-            Fr.e("5299619240641551281634865583518297030282874472190772894086521144482721001553"),
-            Fr.e("16950150798460657717958625567821834550301663161624707787222815936182638968203")
+            bigInt("5299619240641551281634865583518297030282874472190772894086521144482721001553"),
+            bigInt("16950150798460657717958625567821834550301663161624707787222815936182638968203")
         ];
 
-        const w = await circuit.calculateWitness({"e": s}, true);
+        const w = circuit.calculateWitness({"e": s});
 
-        await circuit.checkConstraints(w);
+        assert(circuit.checkWitness(w));
+
+        const xout = w[circuit.getSignalIdx("main.out[0]")];
+        const yout = w[circuit.getSignalIdx("main.out[1]")];
 
         const expectedRes = babyjub.mulPointEscalar(base8, s);
 
-        await circuit.assertOut(w, {out: expectedRes});
-
+        assert(xout.equals(expectedRes[0]));
+        assert(yout.equals(expectedRes[1]));
     });
 
     it("Should generate scalar mul of the firsts 50 elements", async () => {
 
         const base8 = [
-            Fr.e("5299619240641551281634865583518297030282874472190772894086521144482721001553"),
-            Fr.e("16950150798460657717958625567821834550301663161624707787222815936182638968203")
+            bigInt("5299619240641551281634865583518297030282874472190772894086521144482721001553"),
+            bigInt("16950150798460657717958625567821834550301663161624707787222815936182638968203")
         ];
 
         for (let i=0; i<50; i++) {
-            const s = Fr.e(i);
+            const s = bigInt(i);
 
-            const w = await circuit.calculateWitness({"e": s}, true);
+            const w = circuit.calculateWitness({"e": s});
 
-            await circuit.checkConstraints(w);
+            assert(circuit.checkWitness(w));
+
+            const xout = w[circuit.getSignalIdx("main.out[0]")];
+            const yout = w[circuit.getSignalIdx("main.out[1]")];
 
             const expectedRes = babyjub.mulPointEscalar(base8, s);
 
-            await circuit.assertOut(w, {out: expectedRes});
+            assert(xout.equals(expectedRes[0]));
+            assert(yout.equals(expectedRes[1]));
         }
     });
 
     it("If multiply by order should return 0", async () => {
 
-        const w = await circuit.calculateWitness({"e": babyjub.subOrder }, true);
+        const w = circuit.calculateWitness({"e": babyjub.subOrder });
 
-        await circuit.checkConstraints(w);
+        assert(circuit.checkWitness(w));
 
-        await circuit.assertOut(w, {out: [0,1]});
+        const xout = w[circuit.getSignalIdx("main.out[0]")];
+        const yout = w[circuit.getSignalIdx("main.out[1]")];
+
+        assert(xout.equals(bigInt.zero));
+        assert(yout.equals(bigInt.one));
     });
 
 });

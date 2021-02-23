@@ -1,7 +1,11 @@
+const chai = require("chai");
 const path = require("path");
+const snarkjs = require("snarkjs");
+const compiler = require("circom");
 
-const Fr = require("ffjavascript").bn128.Fr;
-const tester = require("circom").tester;
+const assert = chai.assert;
+
+const bigInt = snarkjs.bigInt;
 
 const babyJub = require("../src/babyjub.js");
 const pedersen = require("../src/pedersenHash.js");
@@ -11,39 +15,60 @@ describe("Pedersen test", function() {
     let circuit;
     this.timeout(100000);
     before( async() => {
+        const cirDef = await compiler(path.join(__dirname, "circuits", "pedersen2_test.circom"));
 
-        circuit = await tester(path.join(__dirname, "circuits", "pedersen2_test.circom"));
+        circuit = new snarkjs.Circuit(cirDef);
+
+        console.log("NConstrains Pedersen2: " + circuit.nConstraints);
     });
     it("Should pedersen at zero", async () => {
 
-        let w;
+        let w, xout, yout;
 
-        w = await circuit.calculateWitness({ in: 0}, true);
+        w = circuit.calculateWitness({ in: 0});
+
+        xout = w[circuit.getSignalIdx("main.out[0]")];
+        yout = w[circuit.getSignalIdx("main.out[1]")];
 
         const b = Buffer.alloc(32);
 
         const h = pedersen.hash(b);
         const hP = babyJub.unpackPoint(h);
 
-        await circuit.assertOut(w, {out: hP});
+        /*
+        console.log(`[${xout.toString()}, ${yout.toString()}]`);
+        console.log(`[${hP[0].toString()}, ${hP[1].toString()}]`);
+        */
 
+        assert(xout.equals(hP[0]));
+        assert(yout.equals(hP[1]));
     });
     it("Should pedersen with 253 ones", async () => {
 
-        let w;
+        let w, xout, yout;
 
-        const n = Fr.sub(Fr.shl(Fr.one, Fr.e(253)), Fr.one);
+        const n = bigInt.one.shl(253).sub(bigInt.one);
+        console.log(n.toString(16));
 
-        w = await circuit.calculateWitness({ in: n}, true);
+        w = circuit.calculateWitness({ in: n});
+
+        xout = w[circuit.getSignalIdx("main.out[0]")];
+        yout = w[circuit.getSignalIdx("main.out[1]")];
 
         const b = Buffer.alloc(32);
         for (let i=0; i<31; i++) b[i] = 0xFF;
         b[31] = 0x1F;
 
+
         const h = pedersen.hash(b);
         const hP = babyJub.unpackPoint(h);
 
-        await circuit.assertOut(w, {out: hP});
+        /*
+        console.log(`[${xout.toString()}, ${yout.toString()}]`);
+        console.log(`[${hP[0].toString()}, ${hP[1].toString()}]`);
+        */
 
+        assert(xout.equals(hP[0]));
+        assert(yout.equals(hP[1]));
     });
 });

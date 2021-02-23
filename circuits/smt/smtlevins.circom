@@ -79,11 +79,9 @@ template SMTLevIns(nLevels) {
     signal output levIns[nLevels];
     signal done[nLevels-1];        // Indicates if the insLevel has aready been detected.
 
-    var i;
-
     component isZero[nLevels];
 
-    for (i=0; i<nLevels; i++) {
+    for (var i=0; i<nLevels; i++) {
         isZero[i] = IsZero();
         isZero[i].in <== siblings[i];
     }
@@ -93,7 +91,7 @@ template SMTLevIns(nLevels) {
 
     levIns[nLevels-1] <== (1-isZero[nLevels-2].out);
     done[nLevels-2] <== levIns[nLevels-1];
-    for (i=nLevels-2; i>0; i--) {
+    for (var i=nLevels-2; i>0; i--) {
         levIns[i] <== (1-done[i])*(1-isZero[i-1].out)
         done[i-1] <== levIns[i] + done[i];
     }

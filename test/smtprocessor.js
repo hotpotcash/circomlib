@@ -1,23 +1,25 @@
 const chai = require("chai");
 const path = require("path");
-const tester = require("circom").tester;
-const Fr = require("ffjavascript").bn128.Fr;
+const snarkjs = require("snarkjs");
+const compiler = require("circom");
 
 const smt = require("../src/smt.js");
 
 const assert = chai.assert;
 
+const bigInt = snarkjs.bigInt;
+
 function print(circuit, w, s) {
     console.log(s + ": " + w[circuit.getSignalIdx(s)]);
 }
 
-async function testInsert(tree, key, value, circuit ) {
+async function testInsert(tree, key, value, circuit, log ) {
 
     const res = await tree.insert(key,value);
     let siblings = res.siblings;
-    while (siblings.length<10) siblings.push(Fr.e(0));
+    while (siblings.length<10) siblings.push(bigInt(0));
 
-    const w = await circuit.calculateWitness({
+    const w = circuit.calculateWitness({
         fnc: [1,0],
         oldRoot: res.oldRoot,
         siblings: siblings,
@@ -26,20 +28,19 @@ async function testInsert(tree, key, value, circuit ) {
         isOld0: res.isOld0 ? 1 : 0,
         newKey: key,
         newValue: value
-    }, true);
+    }, log);
 
-    await circuit.checkConstraints(w);
-
-    await circuit.assertOut(w, {newRoot: res.newRoot});
-
+    const root1 = w[circuit.getSignalIdx("main.newRoot")];
+    assert(circuit.checkWitness(w));
+    assert(root1.equals(res.newRoot));
 }
 
 async function testDelete(tree, key, circuit) {
     const res = await tree.delete(key);
     let siblings = res.siblings;
-    while (siblings.length<10) siblings.push(Fr.e(0));
+    while (siblings.length<10) siblings.push(bigInt(0));
 
-    const w = await circuit.calculateWitness({
+    const w = circuit.calculateWitness({
         fnc: [1,1],
         oldRoot: res.oldRoot,
         siblings: siblings,
@@ -48,19 +49,20 @@ async function testDelete(tree, key, circuit) {
         isOld0: res.isOld0 ? 1 : 0,
         newKey: res.delKey,
         newValue: res.delValue
-    }, true);
+    });
 
-    await circuit.checkConstraints(w);
+    const root1 = w[circuit.getSignalIdx("main.newRoot")];
 
-    await circuit.assertOut(w, {newRoot: res.newRoot});
+    assert(circuit.checkWitness(w));
+    assert(root1.equals(res.newRoot));
 }
 
 async function testUpdate(tree, key, newValue, circuit) {
     const res = await tree.update(key, newValue);
     let siblings = res.siblings;
-    while (siblings.length<10) siblings.push(Fr.e(0));
+    while (siblings.length<10) siblings.push(bigInt(0));
 
-    const w = await circuit.calculateWitness({
+    const w = circuit.calculateWitness({
         fnc: [0,1],
         oldRoot: res.oldRoot,
         siblings: siblings,
@@ -71,38 +73,44 @@ async function testUpdate(tree, key, newValue, circuit) {
         newValue: res.newValue
     });
 
-    await circuit.checkConstraints(w);
+    const root1 = w[circuit.getSignalIdx("main.newRoot")];
 
-    await circuit.assertOut(w, {newRoot: res.newRoot});
+    assert(circuit.checkWitness(w));
+    assert(root1.equals(res.newRoot));
 }
 
 
-describe("SMT Processor test", function () {
+describe("SMT test", function () {
     let circuit;
     let tree;
 
     this.timeout(10000000);
 
     before( async () => {
-        circuit = await tester(path.join(__dirname, "circuits", "smtprocessor10_test.circom"));
-        await circuit.loadSymbols();
+        const cirDef = await compiler(path.join(__dirname, "circuits", "smtprocessor10_test.circom"));
+
+        circuit = new snarkjs.Circuit(cirDef);
+
+        console.log("NConstrains SMTProcessor: " + circuit.nConstraints);
 
         tree = await smt.newMemEmptyTrie();
     });
 
     it("Should verify an insert to an empty tree", async () => {
-        const key = Fr.e(111);
-        const value = Fr.e(222);
+        const key = bigInt(111);
+        const value = bigInt(222);
 
         await testInsert(tree, key, value, circuit);
     });
 
     it("It should add another element", async () => {
-        const key = Fr.e(333);
-        const value = Fr.e(444);
+        const key = bigInt(333);
+        const value = bigInt(444);
 
         await testInsert(tree, key, value, circuit);
     });
+
+
 
     it("Should remove an element", async () => {
         await testDelete(tree, 111, circuit);
@@ -110,8 +118,8 @@ describe("SMT Processor test", function () {
     });
 
     it("Should test convination of adding and removing 3 elements", async () => {
-        const keys = [Fr.e(8), Fr.e(9), Fr.e(32)];
-        const values = [Fr.e(88), Fr.e(99), Fr.e(3232)];
+        const keys = [bigInt(8), bigInt(9), bigInt(32)];
+        const values = [bigInt(88), bigInt(99), bigInt(3232)];
         const tree1 = await smt.newMemEmptyTrie();
         const tree2 = await smt.newMemEmptyTrie();
         const tree3 = await smt.newMemEmptyTrie();
@@ -170,8 +178,8 @@ describe("SMT Processor test", function () {
 
     it("Should match a NOp with random vals", async () => {
         let siblings = [];
-        while (siblings.length<10) siblings.push(Fr.e(88));
-        const w = await circuit.calculateWitness({
+        while (siblings.length<10) siblings.push(bigInt(88));
+        const w = circuit.calculateWitness({
             fnc: [0,0],
             oldRoot: 11,
             siblings: siblings,
@@ -182,12 +190,12 @@ describe("SMT Processor test", function () {
             newValue: 77
         });
 
-        const root1 = w[circuit.symbols["main.oldRoot"].varIdx];
-        const root2 = w[circuit.symbols["main.newRoot"].varIdx];
+        const root1 = w[circuit.getSignalIdx("main.oldRoot")];
+        const root2 = w[circuit.getSignalIdx("main.newRoot")];
 
-        await circuit.checkConstraints(w);
+        assert(circuit.checkWitness(w));
+        assert(root1.equals(root2));
 
-        assert(Fr.eq(root1, root2));
     });
     it("Should update an element", async () => {
         const tree1 = await smt.newMemEmptyTrie();
@@ -205,4 +213,5 @@ describe("SMT Processor test", function () {
         await testUpdate(tree1, 9, 999, circuit);
         await testUpdate(tree1, 32, 323232, circuit);
     });
+
 });
